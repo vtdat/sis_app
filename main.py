@@ -12,3 +12,4 @@ elif result >= 2.5:
     print "Kha!"
 else:
     print "Yeu!"
+raw_input("Press any key to terminate...")

@@ -1,8 +1,10 @@
+import getpass
 import time
+import os
 from selenium import webdriver
 import unicodecsv as csv
 def getmark():
-    driver = webdriver.PhantomJS()
+    driver = webdriver.PhantomJS(service_log_path=os.path.devnull)
     url = 'http://sis.hust.edu.vn'
     driver.get(url)
 
@@ -12,7 +14,7 @@ def getmark():
     time.sleep(5)
     driver.get(url)
     driver.find_element_by_id("cLogIn1_tb_cLogIn_User_I").send_keys(raw_input("Username: "))
-    driver.find_element_by_id("cLogIn1_tb_cLogIn_Pass_I").send_keys(raw_input("Password: "))
+    driver.find_element_by_id("cLogIn1_tb_cLogIn_Pass_I").send_keys(getpass.getpass())
     driver.find_element_by_xpath('//*[@id="cLogIn1_bt_cLogIn_B"]').click()
 
     driver.get("http://sis.hust.edu.vn/ModuleGradeBook/StudentCourseMarks.aspx")
