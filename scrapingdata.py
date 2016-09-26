@@ -2,7 +2,11 @@ from selenium import webdriver
 import time
 import unicodecsv as csv
 
-driver = webdriver.PhantomJS()
+# chrome_options = Options()
+# chrome_options.add_argument("disable-popup-blocking")
+# driver = webdriver.Chrome(chrome_options=chrome_options)      # using Chrome
+
+driver = webdriver.PhantomJS()              # silent browser
 url = 'http://sis.hust.edu.vn/ModuleProgram/CourseLists.aspx'
 driver.get(url)
 
