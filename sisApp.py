@@ -2,44 +2,44 @@
 import time
 from selenium import webdriver
 from selenium.common.exceptions import TimeoutException
-# from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.support.wait import WebDriverWait
 import unicodecsv as csv
 import os
 
 class sisApp():
-    def __init__(self):
+    def __init__(self, username = None, password = None):
         global _url
         global _driver
         global _username
         global _password
+        _username = username
+        _password = password
         _url = 'http://sis.hust.edu.vn'
 
         _driver = webdriver.PhantomJS(service_log_path=os.path.devnull)
         # chrome_options = Options()
         # chrome_options.add_argument("disable-popup-blocking")
-        # driver = webdriver.Chrome(chrome_options=chrome_options)
+        # _driver = webdriver.Chrome(chrome_options=chrome_options)
         _driver.get(_url)
 
-    def login(self, username = None, password = None):
-        if username == None or password == None:
+    def login(self):
+        if _username == None or _password == None:
             return False
         else:
-            _username = username
-            _password = password
             try:
                 _driver.get(_url)
                 _driver.find_element_by_id("cLogIn1_tb_cLogIn_User_I").send_keys(_username)
                 _driver.find_element_by_id("cLogIn1_tb_cLogIn_Pass_I").send_keys(_password)
                 _driver.find_element_by_xpath('//*[@id="cLogIn1_bt_cLogIn_B"]').click()
-                if self._islogged():
-                    return True
-                elif u'sis.hust.edu.vn/ModuleUser/vLogin.aspx' in _driver.title:
-                    return False
-                else:
-                    self.login(_username, _password)
             except:
-                self.login(_username, _password)
+                self.login()
+        if _driver.current_url == 'http://sis.hust.edu.vn/ModuleUser/vLogin.aspx':
+            return False
+        elif self._islogged():
+            return True
+        elif u'403' in _driver.title:
+            self.login()
 
     @staticmethod
     def _convertmark (mark):
@@ -115,9 +115,10 @@ class sisApp():
         return result
 
     def _islogged(self):
-        _driver.get(_url)
+        if u'403' in _driver.title:
+            self.login()
         try:
-            wait = WebDriverWait(_driver, 5)
+            wait = WebDriverWait(_driver, 2)
             wait.until(lambda driver: driver.find_element_by_xpath('//*[@id="site_header"]/table/tbody/tr/td[3]/p'))
             if u'Xin chào bạn' in _driver.find_element_by_xpath('//*[@id="site_header"]/table/tbody/tr/td[3]/p').text:
                 return True
@@ -131,10 +132,16 @@ class sisApp():
             _driver.find_element_by_id("cLogIn1_tb_cLogIn_Pass_I").send_keys(_password)
             _driver.find_element_by_xpath('//*[@id="cLogIn1_bt_cLogIn_B"]').click()
         except:
-            if not self._islogged():
-                self._relog()
-            else:
+            if self._islogged():
                 return True
+            else:
+                self._relog()
+
+    def getdriver(self):
+        return _driver
+
+    def getusername(self):
+        return _username
 
     def close(self):
         _driver.delete_all_cookies()
