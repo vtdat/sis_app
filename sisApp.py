@@ -9,52 +9,54 @@ import os
 
 class sisApp():
     def __init__(self):
-        global url
-        global driver
-        url = 'http://sis.hust.edu.vn'
+        global _url
+        global _driver
+        global _username
+        global _password
+        _url = 'http://sis.hust.edu.vn'
 
-        driver = webdriver.PhantomJS(service_log_path=os.path.devnull)
+        _driver = webdriver.PhantomJS(service_log_path=os.path.devnull)
         # chrome_options = Options()
         # chrome_options.add_argument("disable-popup-blocking")
         # driver = webdriver.Chrome(chrome_options=chrome_options)
-        driver.get(url)
+        _driver.get(_url)
 
     def login(self, username = None, password = None):
         if username == None or password == None:
             return False
         else:
+            _username = username
+            _password = password
             try:
-                driver.get(url)
-                driver.find_element_by_id("cLogIn1_tb_cLogIn_User_I").send_keys(username)
-                driver.find_element_by_id("cLogIn1_tb_cLogIn_Pass_I").send_keys(password)
-                driver.find_element_by_xpath('//*[@id="cLogIn1_bt_cLogIn_B"]').click()
-                try:
-                    wait = WebDriverWait(driver, 5)
-                    wait.until(lambda driver: driver.find_element_by_xpath('//*[@id="site_header"]/table/tbody/tr/td[3]/p'))
-                    if u'Xin chào bạn' in driver.find_element_by_xpath('//*[@id="site_header"]/table/tbody/tr/td[3]/p').text:
-                        return True
-                except TimeoutException:
-                    if u'sis.hust.edu.vn/ModuleUser/vLogin.aspx' in driver.title:
-                        return False
-                    else:
-                        self.login(username, password)
+                _driver.get(_url)
+                _driver.find_element_by_id("cLogIn1_tb_cLogIn_User_I").send_keys(_username)
+                _driver.find_element_by_id("cLogIn1_tb_cLogIn_Pass_I").send_keys(_password)
+                _driver.find_element_by_xpath('//*[@id="cLogIn1_bt_cLogIn_B"]').click()
+                if self._islogged():
+                    return True
+                elif u'sis.hust.edu.vn/ModuleUser/vLogin.aspx' in _driver.title:
+                    return False
+                else:
+                    self.login(_username, _password)
             except:
-                self.login(username, password)
+                self.login(_username, _password)
 
     @staticmethod
     def _convertmark (mark):
         return {'A+': 4,'A': 4,'B+': 3.5,'B': 3,'C+': 2.5,'C': 2,'D+': 1.5,'D': 1,'F': 0}.get(mark, 0)
 
     def getmark(self, export = 0):
-        driver.get(url + '/ModuleGradeBook/StudentCourseMarks.aspx')
-        if u'403' in driver.title:
-            driver.get(url + '/ModuleGradeBook/StudentCourseMarks.aspx')
+        if not self._islogged():
+            self._relog()
+        _driver.get(_url + '/ModuleGradeBook/StudentCourseMarks.aspx')
+        if u'403' in _driver.title:
+            _driver.get(_url + '/ModuleGradeBook/StudentCourseMarks.aspx')
         result = []
         i = 0
         while True:
             elements = []
             try:
-                elements.append(driver.find_element_by_id("MainContent_gvCourseMarks_DXDataRow" + str(i)).text)
+                elements.append(_driver.find_element_by_id("MainContent_gvCourseMarks_DXDataRow" + str(i)).text)
                 for element in elements:
                     semester, subjcode, ranstring = element.split(" ", 2)
                     subjname, credit, classcode, midterm, final, mark = ranstring.rsplit(" ", 5)
@@ -75,6 +77,8 @@ class sisApp():
         return result
 
     def getcpa(self):
+        if not self._islogged():
+            self._relog()
         subjects = []
         totalmark = float(0)
         totalcredit = float(0)
@@ -110,6 +114,28 @@ class sisApp():
                     result[element['subjcode']]['mark'] = float(element['mark'])
         return result
 
+    def _islogged(self):
+        _driver.get(_url)
+        try:
+            wait = WebDriverWait(_driver, 5)
+            wait.until(lambda driver: driver.find_element_by_xpath('//*[@id="site_header"]/table/tbody/tr/td[3]/p'))
+            if u'Xin chào bạn' in _driver.find_element_by_xpath('//*[@id="site_header"]/table/tbody/tr/td[3]/p').text:
+                return True
+        except TimeoutException:
+            return False
+
+    def _relog(self):
+        try:
+            _driver.get(_url)
+            _driver.find_element_by_id("cLogIn1_tb_cLogIn_User_I").send_keys(_username)
+            _driver.find_element_by_id("cLogIn1_tb_cLogIn_Pass_I").send_keys(_password)
+            _driver.find_element_by_xpath('//*[@id="cLogIn1_bt_cLogIn_B"]').click()
+        except:
+            if not self._islogged():
+                self._relog()
+            else:
+                return True
+
     def close(self):
-        driver.delete_all_cookies()
-        driver.close()
+        _driver.delete_all_cookies()
+        _driver.close()
